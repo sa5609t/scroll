@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>橫向捲軸手機遊戲</title>
+    <title>橫向捲軸手機遊戲 (修正版)</title>
     <style>
         body {
             margin: 0;
@@ -126,12 +126,10 @@
             if (imagesLoaded === totalImages) {
                 console.log("所有圖片載入完成");
                 allResourcesLoaded = true;
-                // 可以在這裡呼叫 startGame() 或類似函數
             }
         };
         images[key].onerror = () => {
             console.error(`無法載入圖片: ${key} (${src})`);
-            // 可以設置一個預設圖像或標記錯誤
             images[key] = null; // 標記為null或使用預設圖像
             imagesLoaded++;
              if (imagesLoaded === totalImages) {
@@ -149,33 +147,32 @@
     const bgMusic = document.getElementById('bgMusic');
     const shootSound = document.getElementById('shootSound');
     const jumpSound = document.getElementById('jumpSound');
-    let audioInitialized = false; // 標記音訊是否已由使用者互動啟用
+    let audioInitialized = false;
 
     // --- 遊戲狀態 ---
     let player = {
         x: 100,
-        y: canvasHeight - groundHeight - 50, // 初始Y位置
-        width: 40, // 根據圖片調整
-        height: 50, // 根據圖片調整
-        dx: 0, // 水平速度
-        dy: 0, // 垂直速度
+        y: canvasHeight - groundHeight - 50,
+        width: 40, height: 50,
+        dx: 0, dy: 0,
         health: playerMaxHealth,
         isJumping: false,
         isShooting: false,
         shootCooldown: 0,
-        facing: 'right', // 'left' or 'right'
-        animFrame: 0, // 動畫幀
+        facing: 'right',
+        animFrame: 0,
         walkAnimTimer: 0,
-        currentImage: 'playerIdle' // 目前顯示的圖片 key
+        currentImage: 'playerIdle'
     };
 
     let enemies = [];
     let obstacles = [];
     let playerBullets = [];
     let enemyBullets = [];
-    let scrollOffset = 0; // 背景滾動偏移量
+    let scrollOffset = 0;
     let gameOver = false;
     let gameWon = false;
+    let worldWidth = 2000; // 遊戲世界總寬度
 
     // --- 輸入控制 ---
     let keys = {
@@ -192,9 +189,8 @@
     const btnShoot = document.getElementById('btnShoot');
 
     function handleStart(key, event) {
-        event.preventDefault(); // 阻止預設行為 (如頁面滾動)
+        event.preventDefault();
         keys[key] = true;
-        // 首次觸控時嘗試播放背景音樂
         if (!audioInitialized) {
             initializeAudio();
         }
@@ -218,7 +214,7 @@
     // 滑鼠事件 (用於桌面測試)
     btnLeft.addEventListener('mousedown', (e) => handleStart('left', e));
     btnLeft.addEventListener('mouseup', (e) => handleEnd('left', e));
-    btnLeft.addEventListener('mouseleave', (e) => handleEnd('left', e)); // 防止按住移開
+    btnLeft.addEventListener('mouseleave', (e) => handleEnd('left', e));
     btnRight.addEventListener('mousedown', (e) => handleStart('right', e));
     btnRight.addEventListener('mouseup', (e) => handleEnd('right', e));
     btnRight.addEventListener('mouseleave', (e) => handleEnd('right', e));
@@ -232,12 +228,10 @@
     // --- 初始化音效 ---
     function initializeAudio() {
         bgMusic.play().catch(e => console.log("背景音樂播放失敗:", e));
-        // 嘗試播放短暫靜音音效，以"解鎖"其他音效
         shootSound.volume = 0;
         shootSound.play().catch(e => {});
         jumpSound.volume = 0;
         jumpSound.play().catch(e => {});
-        // 恢復音量
         setTimeout(() => {
              shootSound.volume = 1;
              jumpSound.volume = 1;
@@ -245,49 +239,30 @@
         audioInitialized = true;
     }
 
-
     // --- 遊戲物件生成 ---
     function createEnemyA(x, y) {
         enemies.push({
-            type: 'A',
-            x: x, y: y, width: 40, height: 50, // 根據圖片調整
-            health: 2,
-            shootTimer: Math.random() * 100 + 100, // 隨機射擊間隔
-            isShooting: false,
-            shootAnimTimer: 0,
-            imageIdle: 'enemyAIdle',
-            imageShoot: 'enemyAShoot'
+            type: 'A', x: x, y: y, width: 40, height: 50, health: 2,
+            shootTimer: Math.random() * 100 + 100, isShooting: false, shootAnimTimer: 0,
+            imageIdle: 'enemyAIdle', imageShoot: 'enemyAShoot'
         });
     }
 
     function createEnemyB(x, y) {
         enemies.push({
-            type: 'B',
-            x: x, y: y, width: 40, height: 50, // 根據圖片調整
-            health: 1,
-            dx: Math.random() > 0.5 ? 1 : -1, // 初始移動方向
-            moveRange: 150, // 移動範圍
-            startX: x,
-            animFrame: 0,
-            animTimer: 0,
-            imageWalk1: 'enemyBWalk1',
-            imageWalk2: 'enemyBWalk2'
+            type: 'B', x: x, y: y, width: 40, height: 50, health: 1,
+            dx: Math.random() > 0.5 ? 1 : -1, moveRange: 150, startX: x,
+            animFrame: 0, animTimer: 0,
+            imageWalk1: 'enemyBWalk1', imageWalk2: 'enemyBWalk2'
         });
     }
 
     function createEnemyC(x, y) {
-         // 確保 C 怪只生成一次（或者根據你的關卡邏輯）
         if (!enemies.some(e => e.type === 'C')) {
             enemies.push({
-                type: 'C',
-                x: x, y: y, width: 60, height: 70, // 根據圖片調整
-                health: 15,
-                isBoss: true, // 標記為最終敵人
-                shootTimer: 120, // 射擊間隔
-                isShooting: false,
-                shootAnimTimer: 0,
-                imageIdle: 'enemyCIdle',
-                imageShoot: 'enemyCShoot'
+                type: 'C', x: x, y: y, width: 60, height: 70, health: 15,
+                isBoss: true, shootTimer: 120, isShooting: false, shootAnimTimer: 0,
+                imageIdle: 'enemyCIdle', imageShoot: 'enemyCShoot'
             });
         }
     }
@@ -296,56 +271,62 @@
         obstacles.push({ x: x, y: y, width: width, height: height, image: 'obstacle' });
     }
 
+    // *** 修正後的 createPlayerBullet ***
     function createPlayerBullet() {
+        // 計算子彈發射點的螢幕 X 座標
+        const bulletStartXOnScreen = player.facing === 'right' ? player.x + player.width : player.x;
+        // 將螢幕 X 座標轉換為世界 X 座標
+        const bulletWorldX = bulletStartXOnScreen + scrollOffset;
+
         playerBullets.push({
-            x: player.facing === 'right' ? player.x + player.width : player.x,
-            y: player.y + player.height / 2 - 2, // 子彈中心
+            x: bulletWorldX, // <--- 使用世界座標
+            y: player.y + player.height / 2 - 2, // 子彈中心 (Y座標不受滾動影響)
             width: 10, height: 4,
             speed: player.facing === 'right' ? playerBulletSpeed : -playerBulletSpeed
         });
         if (audioInitialized) {
-            shootSound.currentTime = 0; // 重置音效，允許快速連播
-            shootSound.play().catch(e => {}); // 播放射擊音效
+            shootSound.currentTime = 0;
+            shootSound.play().catch(e => {});
         }
-        player.isShooting = true; // 觸發射擊動畫
-        player.shootCooldown = 20; // 射擊冷卻時間 (幀)
-        setTimeout(() => { player.isShooting = false; }, 150); // 短暫顯示射擊圖
+        player.isShooting = true;
+        player.shootCooldown = 20;
+        setTimeout(() => { player.isShooting = false; }, 150);
     }
+    // *** 結束修正 ***
 
     function createEnemyBullet(enemy) {
          if (enemy.type === 'A') {
-            // A 怪單點射擊 (朝向玩家)
             const angle = Math.atan2(player.y + player.height / 2 - (enemy.y + enemy.height / 2),
-                                     player.x + player.width / 2 - (enemy.x + enemy.width / 2));
+                                     player.x + player.width / 2 - (enemy.x - scrollOffset + enemy.width / 2)); // 敵人X用螢幕座標
             enemyBullets.push({
-                x: enemy.x + enemy.width / 2,
+                x: enemy.x + enemy.width / 2, // 子彈初始位置仍用世界座標
                 y: enemy.y + enemy.height / 2,
                 width: 8, height: 8,
                 dx: Math.cos(angle) * enemyBulletSpeed,
                 dy: Math.sin(angle) * enemyBulletSpeed
             });
         } else if (enemy.type === 'C') {
-            // C 怪散狀射擊 (例如：3發)
-            const spreadAngles = [-0.2, 0, 0.2]; // 角度偏移
+            const spreadAngles = [-0.2, 0, 0.2];
             const baseAngle = Math.atan2(player.y + player.height / 2 - (enemy.y + enemy.height / 2),
-                                        player.x + player.width / 2 - (enemy.x + enemy.width / 2));
+                                        player.x + player.width / 2 - (enemy.x - scrollOffset + enemy.width / 2)); // 敵人X用螢幕座標
             spreadAngles.forEach(offset => {
                  const angle = baseAngle + offset;
                  enemyBullets.push({
-                     x: enemy.x + enemy.width / 2,
+                     x: enemy.x + enemy.width / 2, // 世界座標
                      y: enemy.y + enemy.height / 2,
                      width: 8, height: 8,
-                     dx: Math.cos(angle) * (enemyBulletSpeed * 0.8), // C怪子彈可稍慢
+                     dx: Math.cos(angle) * (enemyBulletSpeed * 0.8),
                      dy: Math.sin(angle) * (enemyBulletSpeed * 0.8)
                  });
             });
         }
         enemy.isShooting = true;
-        enemy.shootAnimTimer = 15; // 射擊動畫顯示時間
+        enemy.shootAnimTimer = 15;
     }
 
     // --- 碰撞檢測 ---
     function checkCollision(rect1, rect2) {
+        // 這個函數現在假設傳入的都是螢幕座標
         return rect1.x < rect2.x + rect2.width &&
                rect1.x + rect1.width > rect2.x &&
                rect1.y < rect2.y + rect2.height &&
@@ -354,7 +335,7 @@
 
     // --- 遊戲邏輯更新 ---
     function update() {
-        if (gameOver || gameWon || !allResourcesLoaded) return; // 遊戲結束或資源未載入則停止更新
+        if (gameOver || gameWon || !allResourcesLoaded) return;
 
         // --- 玩家移動 ---
         player.dx = 0;
@@ -373,7 +354,7 @@
             player.isJumping = true;
             if (audioInitialized) {
                 jumpSound.currentTime = 0;
-                jumpSound.play().catch(e => {}); // 播放跳躍音效
+                jumpSound.play().catch(e => {});
             }
         }
 
@@ -389,36 +370,43 @@
         player.y += player.dy;
         player.dy += gravity;
 
-        // 預測下一幀的水平位置
-        let nextX = player.x + player.dx;
+        // 預測下一幀的水平位置 (螢幕座標)
+        let nextPlayerScreenX = player.x + player.dx;
 
         // --- 邊界檢測 & 滾動 ---
-        const scrollThreshold = canvasWidth * 0.4; // 玩家接近此線時開始滾動
+        const scrollThreshold = canvasWidth * 0.4;
+        let worldMoved = false; // 標記本幀世界是否滾動
 
-        if (player.dx > 0 && player.x > scrollThreshold && nextX + scrollOffset < worldWidth - canvasWidth + scrollThreshold) {
-             // 向右移動且超過滾動閾值，且未到達世界盡頭
+        if (player.dx > 0 && player.x > scrollThreshold && (player.x + scrollOffset + player.dx) < worldWidth - (canvasWidth - scrollThreshold)) {
+             // 向右移動且超過滾動閾值，且未到達世界盡頭附近
              scrollOffset += player.dx;
-             player.dx = 0; // 玩家在屏幕上的位置不變，世界向左移動
+             worldMoved = true;
         } else if (player.dx < 0 && player.x < canvasWidth - scrollThreshold && scrollOffset > 0) {
             // 向左移動且超過滾動閾值，且不在世界起點
-             scrollOffset += player.dx; // scrollOffset 會減少
-             player.dx = 0; // 玩家在屏幕上的位置不變，世界向右移動
+             scrollOffset += player.dx; // scrollOffset 會減少 (因為 player.dx 是負數)
              if (scrollOffset < 0) scrollOffset = 0; // 防止滾動到負數
+             worldMoved = true;
         }
 
-        // 更新玩家最終X位置
-        player.x += player.dx;
+        // 如果世界沒有滾動，才實際移動玩家在螢幕上的位置
+        if (!worldMoved) {
+             player.x += player.dx;
+        }
 
-        // 限制玩家在畫布內移動 (左右邊界由 scrollOffset 控制)
+        // 限制玩家在畫布內移動 (左右邊界)
         if (player.x < 0) player.x = 0;
-        // 右邊界檢測現在需要考慮世界寬度
-        const effectiveRightBoundary = worldWidth - player.width;
-        if (player.x + scrollOffset > effectiveRightBoundary) {
-             player.x = effectiveRightBoundary - scrollOffset;
-        }
-         // 確保玩家不會跑到滾動邊界之外的畫布區域
         if (player.x > canvasWidth - player.width) {
             player.x = canvasWidth - player.width;
+        }
+         // 確保玩家不會因滾動而跑到世界地圖的起點或終點之外
+        if (scrollOffset < 0) scrollOffset = 0;
+        if (scrollOffset > worldWidth - canvasWidth) {
+            scrollOffset = worldWidth - canvasWidth;
+            // 如果已滾動到最右邊，允許玩家在畫布右側移動直到地圖邊緣
+             player.x += player.dx;
+             if (player.x > canvasWidth - player.width) {
+                 player.x = canvasWidth - player.width;
+             }
         }
 
 
@@ -435,31 +423,28 @@
         // 檢查障礙物
         obstacles.forEach(obstacle => {
             const obsScreenX = obstacle.x - scrollOffset; // 障礙物在螢幕上的 X
-            // 簡易碰撞: 檢查是否在障礙物上方
-            if (player.x + player.width > obsScreenX &&
-                player.x < obsScreenX + obstacle.width &&
-                player.y + player.height >= obstacle.y && // 玩家底部接觸或穿過障礙物頂部
-                player.y < obstacle.y + obstacle.height) { // 確保玩家不是從下方穿過
+            const playerRectScreen = {x: player.x, y: player.y, width: player.width, height: player.height};
+            const obstacleRectScreen = {x: obsScreenX, y: obstacle.y, width: obstacle.width, height: obstacle.height};
 
-                // 判斷是從上方落下還是側面碰撞
-                const prevPlayerBottom = player.y - player.dy + player.height; // 上一幀玩家底部
+            if (checkCollision(playerRectScreen, obstacleRectScreen)) {
+                 // 判斷碰撞方向進行處理
+                 const prevPlayerBottom = player.y - player.dy + player.height;
+                 const prevPlayerRight = player.x - (worldMoved ? 0 : player.dx) + player.width; // 上一幀的螢幕X
+                 const prevPlayerLeft = player.x - (worldMoved ? 0 : player.dx);
 
-                if (player.dy >= 0 && prevPlayerBottom <= obstacle.y) {
-                    // 從上方落下到障礙物
-                    player.y = obstacle.y - player.height;
-                    player.dy = 0;
-                    player.isJumping = false;
-                    onGround = true;
-                } else {
-                     // 側面碰撞 (簡易處理: 阻止水平移動)
-                     if (player.dx > 0 && player.x + player.width > obsScreenX) { // 從左撞
-                        player.x = obsScreenX - player.width - 1;
-                     } else if (player.dx < 0 && player.x < obsScreenX + obstacle.width) { // 從右撞
-                        player.x = obsScreenX + obstacle.width + 1;
-                     }
-                     // 如果是跳躍中撞到側面，可以稍微反彈或停止水平速度
-                     // player.dx = 0;
-                }
+                 if (player.dy >= 0 && prevPlayerBottom <= obstacleRectScreen.y) { // 從上方落下
+                     player.y = obstacleRectScreen.y - player.height;
+                     player.dy = 0;
+                     player.isJumping = false;
+                     onGround = true;
+                 } else if (player.dy < 0 && player.y >= obstacleRectScreen.y + obstacleRectScreen.height) { // 從下方撞到
+                     player.y = obstacleRectScreen.y + obstacleRectScreen.height;
+                     player.dy = 0;
+                 } else if (!worldMoved && player.dx > 0 && prevPlayerRight <= obstacleRectScreen.x) { // 從左側撞到
+                     player.x = obstacleRectScreen.x - player.width;
+                 } else if (!worldMoved && player.dx < 0 && prevPlayerLeft >= obstacleRectScreen.x + obstacleRectScreen.width) { // 從右側撞到
+                     player.x = obstacleRectScreen.x + obstacleRectScreen.width;
+                 }
             }
         });
 
@@ -467,41 +452,36 @@
         player.walkAnimTimer++;
         if (!player.isJumping) {
             if (keys.left || keys.right) {
-                // 行走動畫
-                if (player.walkAnimTimer % 20 < 10) { // 每10幀切換一次
-                    player.currentImage = 'playerWalk1';
-                } else {
-                    player.currentImage = 'playerWalk2';
-                }
-            } else if (player.isShooting) {
-                 player.currentImage = 'playerShoot';
-            } else {
-                 player.currentImage = 'playerIdle'; // 站立
-            }
+                if (player.walkAnimTimer % 20 < 10) { player.currentImage = 'playerWalk1'; }
+                else { player.currentImage = 'playerWalk2'; }
+            } else if (player.isShooting) { player.currentImage = 'playerShoot'; }
+            else { player.currentImage = 'playerIdle'; }
         } else {
-            player.currentImage = 'playerJump'; // 跳躍
-            if (player.isShooting) { // 跳躍射擊優先顯示射擊
-                 player.currentImage = 'playerShoot';
-            }
+            player.currentImage = 'playerJump';
+            if (player.isShooting) { player.currentImage = 'playerShoot'; }
         }
 
-
         // --- 更新子彈 ---
+        // 玩家子彈
         playerBullets.forEach((bullet, index) => {
-            bullet.x += bullet.speed;
-            if (bullet.x > canvasWidth + scrollOffset || bullet.x < scrollOffset) { // 移除飛出螢幕的子彈 (考慮滾動)
+            bullet.x += bullet.speed; // 更新世界座標
+            // 移除飛出可見世界範圍的子彈
+            if (bullet.x < scrollOffset - bullet.width || bullet.x > scrollOffset + canvasWidth) {
                 playerBullets.splice(index, 1);
             }
         });
 
+        // 敵人子彈
         enemyBullets.forEach((bullet, index) => {
-            bullet.x += bullet.dx;
+            bullet.x += bullet.dx; // 更新世界座標
             bullet.y += bullet.dy;
-            if (bullet.x > canvasWidth + scrollOffset || bullet.x < scrollOffset || bullet.y > canvasHeight || bullet.y < 0) {
+            const bulletScreenX = bullet.x - scrollOffset; // 計算螢幕座標
+            // 移除飛出螢幕的子彈
+            if (bulletScreenX < -bullet.width || bulletScreenX > canvasWidth || bullet.y < -bullet.height || bullet.y > canvasHeight) {
                 enemyBullets.splice(index, 1);
             }
-            // 敵人子彈與玩家碰撞
-            else if (checkCollision(player, { ...bullet, x: bullet.x - scrollOffset })) { // 子彈位置需減去滾動偏移
+            // 敵人子彈與玩家碰撞 (使用螢幕座標)
+            else if (checkCollision(player, { x: bulletScreenX, y: bullet.y, width: bullet.width, height: bullet.height })) {
                 enemyBullets.splice(index, 1);
                 player.health--;
                 console.log("玩家受傷! 剩餘生命:", player.health);
@@ -512,44 +492,36 @@
             }
         });
 
-
         // --- 更新敵人 ---
         enemies.forEach((enemy, enemyIndex) => {
             const enemyScreenX = enemy.x - scrollOffset; // 敵人在螢幕上的 X
 
-            // 只有在螢幕範圍內的敵人才需要完整更新和繪製
-            if (enemyScreenX + enemy.width > 0 && enemyScreenX < canvasWidth) {
-
-                // 更新敵人邏輯
+            if (enemyScreenX + enemy.width > 0 && enemyScreenX < canvasWidth) { // 只更新螢幕內的敵人
+                // 更新敵人邏輯 (A, B, C)
                 if (enemy.type === 'A') {
                     enemy.shootTimer--;
                     if (enemy.shootTimer <= 0) {
                         createEnemyBullet(enemy);
-                        enemy.shootTimer = Math.random() * 100 + 150; // 重置計時器
+                        enemy.shootTimer = Math.random() * 100 + 150;
                     }
                     if (enemy.isShooting) {
                         enemy.shootAnimTimer--;
                         if (enemy.shootAnimTimer <= 0) enemy.isShooting = false;
                     }
                 } else if (enemy.type === 'B') {
-                    enemy.x += enemy.dx;
-                    // B怪動畫
+                    enemy.x += enemy.dx; // 更新世界座標
                     enemy.animTimer++;
-                    if (enemy.animTimer % 30 < 15) {
-                        enemy.currentImage = enemy.imageWalk1;
-                    } else {
-                        enemy.currentImage = enemy.imageWalk2;
-                    }
-                    // B怪移動範圍
+                    if (enemy.animTimer % 30 < 15) { enemy.currentImage = enemy.imageWalk1; }
+                    else { enemy.currentImage = enemy.imageWalk2; }
                     if (enemy.x > enemy.startX + enemy.moveRange || enemy.x < enemy.startX - enemy.moveRange) {
-                        enemy.dx *= -1; // 碰到邊界反向
+                        enemy.dx *= -1;
                         enemy.x += enemy.dx; // 避免卡住
                     }
                 } else if (enemy.type === 'C') {
                      enemy.shootTimer--;
                      if (enemy.shootTimer <= 0) {
                         createEnemyBullet(enemy);
-                        enemy.shootTimer = 150; // C怪固定射擊間隔
+                        enemy.shootTimer = 150;
                      }
                      if (enemy.isShooting) {
                          enemy.shootAnimTimer--;
@@ -557,9 +529,14 @@
                      }
                 }
 
-                 // 玩家子彈與敵人碰撞
-                 playerBullets.forEach((bullet, bulletIndex) => {
-                     if (checkCollision(bullet, { ...enemy, x: enemyScreenX })) { // 使用螢幕座標碰撞檢測
+                // *** 修正後的玩家子彈與敵人碰撞檢測 ***
+                playerBullets.forEach((bullet, bulletIndex) => {
+                    const bulletScreenX = bullet.x - scrollOffset; // 子彈螢幕 X
+                    // 使用子彈和敵人的螢幕座標
+                    if (checkCollision(
+                            { x: bulletScreenX, y: bullet.y, width: bullet.width, height: bullet.height },
+                            { x: enemyScreenX, y: enemy.y, width: enemy.width, height: enemy.height }
+                       )) {
                          playerBullets.splice(bulletIndex, 1);
                          enemy.health--;
                          console.log(`敵人 ${enemy.type} 受傷! 剩餘生命: ${enemy.health}`);
@@ -569,43 +546,47 @@
                                  gameWon = true;
                                  console.log("遊戲結束 - 勝利!");
                              }
+                             // 使用 filter 或延遲刪除來避免在迭代中修改數組的問題
+                             // 簡單起見，這裡先這樣寫，但在複雜情況下可能需要改進
                              enemies.splice(enemyIndex, 1);
+                             // 因為敵人被刪除，後面的碰撞檢測可能出錯，可以考慮跳出內層循環
+                             return; // 跳出 playerBullets.forEach 的當前迭代
                          }
                      }
                  });
+                 // *** 結束修正 ***
 
-                // 玩家與敵人碰撞
-                if (checkCollision(player, { ...enemy, x: enemyScreenX })) {
-                    // 簡易碰撞反應：玩家受傷，並稍微彈開 (避免持續碰撞)
+                // 玩家與敵人碰撞 (使用螢幕座標)
+                if (!gameOver && !gameWon && // 確保遊戲進行中才檢測
+                    checkCollision(player, { x: enemyScreenX, y: enemy.y, width: enemy.width, height: enemy.height })) {
                     player.health--;
                     console.log("玩家碰撞敵人! 剩餘生命:", player.health);
-
-                    // 根據碰撞方向稍微推開玩家
-                    if (player.x < enemyScreenX + enemy.width / 2) { // 玩家在左側
-                        player.x -= 15; // 向左彈開
-                    } else { // 玩家在右側
-                        player.x += 15; // 向右彈開
-                    }
-                    // 可以選擇是否給予短暫無敵時間
+                    // 簡單反彈效果
+                    if (player.x < enemyScreenX + enemy.width / 2) { player.x -= 15; }
+                    else { player.x += 15; }
+                     // 限制反彈位置
+                    if (player.x < 0) player.x = 0;
+                    if (player.x > canvasWidth - player.width) player.x = canvasWidth - player.width;
 
                     if (player.health <= 0) {
                         gameOver = true;
                         console.log("遊戲結束 - 失敗");
                     }
+                    // 可以添加短暫無敵幀
                 }
-            } // End of check if enemy is on screen
-        }); // End of enemies.forEach
+            } // End if enemy on screen
+        }); // End enemies.forEach
 
-
-    } // End of update()
-
+    } // End update()
 
     // --- 繪製遊戲畫面 ---
     function draw() {
         if (!allResourcesLoaded) {
              ctx.fillStyle = 'black';
              ctx.font = '20px Arial';
-             ctx.fillText('Loading resources...', canvasWidth / 2 - 100, canvasHeight / 2);
+             ctx.textAlign = 'center';
+             ctx.fillText(`Loading resources... ${imagesLoaded}/${totalImages}`, canvasWidth / 2, canvasHeight / 2);
+             ctx.textAlign = 'left'; // 恢復預設
              return;
         }
 
@@ -616,101 +597,109 @@
         const bgImage = images['background'];
         if (bgImage) {
             const bgWidth = bgImage.width;
-            const bgHeight = bgImage.height;
-            // 計算需要繪製的背景數量以及起始位置
             const startX = -(scrollOffset % bgWidth);
             for (let i = 0; startX + i * bgWidth < canvasWidth; i++) {
-                 // 繪製背景圖，根據畫布高度縮放或裁剪
                  ctx.drawImage(bgImage, startX + i * bgWidth, 0, bgWidth, canvasHeight);
             }
         } else {
-            // 若背景圖未載入，畫預設色
             ctx.fillStyle = '#70c5ce';
             ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
 
-         // 繪製地面 (簡單矩形示意)
-        ctx.fillStyle = '#8b4513'; // 咖啡色
+        // 繪製地面 (簡單矩形示意)
+        ctx.fillStyle = '#8b4513';
         ctx.fillRect(0, canvasHeight - groundHeight, canvasWidth, groundHeight);
-
 
         // --- 繪製障礙物 ---
         obstacles.forEach(obstacle => {
             const obsScreenX = obstacle.x - scrollOffset;
             const obsImage = images[obstacle.image];
-            if (obsImage && obsScreenX + obstacle.width > 0 && obsScreenX < canvasWidth) {
-                 ctx.drawImage(obsImage, obsScreenX, obstacle.y, obstacle.width, obstacle.height);
-            } else if (obsScreenX + obstacle.width > 0 && obsScreenX < canvasWidth) { // 圖片未載入時畫矩形
-                 ctx.fillStyle = 'gray';
-                 ctx.fillRect(obsScreenX, obstacle.y, obstacle.width, obstacle.height);
+            if (obsScreenX + obstacle.width > 0 && obsScreenX < canvasWidth) { // 只繪製螢幕內的
+                if (obsImage) {
+                    ctx.drawImage(obsImage, obsScreenX, obstacle.y, obstacle.width, obstacle.height);
+                } else {
+                    ctx.fillStyle = 'gray';
+                    ctx.fillRect(obsScreenX, obstacle.y, obstacle.width, obstacle.height);
+                }
             }
         });
 
         // --- 繪製敵人 ---
         enemies.forEach(enemy => {
             const enemyScreenX = enemy.x - scrollOffset;
-            let imgToDraw = null;
+            if (enemyScreenX + enemy.width > 0 && enemyScreenX < canvasWidth) { // 只繪製螢幕內的
+                let imgToDraw = null;
+                 if (enemy.type === 'A') {
+                    imgToDraw = enemy.isShooting ? images[enemy.imageShoot] : images[enemy.imageIdle];
+                } else if (enemy.type === 'B') {
+                     imgToDraw = (enemy.animTimer % 30 < 15) ? images[enemy.imageWalk1] : images[enemy.imageWalk2];
+                } else if (enemy.type === 'C') {
+                     imgToDraw = enemy.isShooting ? images[enemy.imageShoot] : images[enemy.imageIdle];
+                }
 
-            if (enemy.type === 'A') {
-                imgToDraw = enemy.isShooting ? images[enemy.imageShoot] : images[enemy.imageIdle];
-            } else if (enemy.type === 'B') {
-                // B怪需要根據動畫幀選擇圖片
-                 imgToDraw = (enemy.animTimer % 30 < 15) ? images[enemy.imageWalk1] : images[enemy.imageWalk2];
-            } else if (enemy.type === 'C') {
-                 imgToDraw = enemy.isShooting ? images[enemy.imageShoot] : images[enemy.imageIdle];
-            }
-
-
-            if (imgToDraw && enemyScreenX + enemy.width > 0 && enemyScreenX < canvasWidth) {
-                ctx.drawImage(imgToDraw, enemyScreenX, enemy.y, enemy.width, enemy.height);
-            } else if (enemyScreenX + enemy.width > 0 && enemyScreenX < canvasWidth) {
-                 // 圖片載入失敗的備用繪製
-                 ctx.fillStyle = 'purple';
-                 ctx.fillRect(enemyScreenX, enemy.y, enemy.width, enemy.height);
-                 ctx.fillStyle = 'white';
-                 ctx.fillText(enemy.type, enemyScreenX + 5, enemy.y + 15);
+                if (imgToDraw) {
+                     // B怪根據移動方向翻轉
+                     if (enemy.type === 'B') {
+                         ctx.save();
+                         if (enemy.dx < 0) { // 向左移動時翻轉
+                             ctx.scale(-1, 1);
+                             ctx.drawImage(imgToDraw, -enemyScreenX - enemy.width, enemy.y, enemy.width, enemy.height);
+                         } else {
+                             ctx.drawImage(imgToDraw, enemyScreenX, enemy.y, enemy.width, enemy.height);
+                         }
+                         ctx.restore();
+                     } else { // 其他怪不翻轉
+                         ctx.drawImage(imgToDraw, enemyScreenX, enemy.y, enemy.width, enemy.height);
+                     }
+                } else { // 備用繪製
+                    ctx.fillStyle = 'purple';
+                    ctx.fillRect(enemyScreenX, enemy.y, enemy.width, enemy.height);
+                    ctx.fillStyle = 'white';
+                    ctx.fillText(enemy.type, enemyScreenX + 5, enemy.y + 15);
+                }
             }
         });
-
 
         // --- 繪製玩家 ---
         const playerImg = images[player.currentImage];
         if (playerImg) {
-            ctx.save(); // 保存當前繪圖狀態
+            ctx.save();
             if (player.facing === 'left') {
-                // 水平翻轉繪製
                 ctx.scale(-1, 1);
-                ctx.translate(-player.x * 2 - player.width, 0); // 校正翻轉後的位置
-                 ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+                ctx.drawImage(playerImg, -player.x - player.width, player.y, player.width, player.height);
             } else {
-                 // 正常繪製
                  ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
             }
-            ctx.restore(); // 恢復繪圖狀態
-        } else {
-             // 圖片載入失敗的備用繪製
+            ctx.restore();
+        } else { // 備用繪製
              ctx.fillStyle = 'green';
              ctx.fillRect(player.x, player.y, player.width, player.height);
         }
 
-
         // --- 繪製子彈 ---
-        ctx.fillStyle = 'yellow'; // 玩家子彈顏色
+        // 玩家子彈
+        ctx.fillStyle = 'yellow';
         playerBullets.forEach(bullet => {
-            ctx.fillRect(bullet.x - scrollOffset, bullet.y, bullet.width, bullet.height);
+            const bulletScreenX = bullet.x - scrollOffset; // 計算螢幕座標
+            // 只繪製螢幕內的子彈
+            if (bulletScreenX >= 0 && bulletScreenX <= canvasWidth) {
+                ctx.fillRect(bulletScreenX, bullet.y, bullet.width, bullet.height);
+            }
         });
-
-        ctx.fillStyle = 'orange'; // 敵人子彈顏色
+        // 敵人子彈
+        ctx.fillStyle = 'orange';
         enemyBullets.forEach(bullet => {
-             ctx.fillRect(bullet.x - scrollOffset, bullet.y, bullet.width, bullet.height);
+             const bulletScreenX = bullet.x - scrollOffset; // 計算螢幕座標
+             if (bulletScreenX >= -bullet.width && bulletScreenX <= canvasWidth) { // 稍微放寬繪製範圍
+                 ctx.fillRect(bulletScreenX, bullet.y, bullet.width, bullet.height);
+             }
         });
-
 
         // --- 繪製 UI (生命值) ---
         ctx.fillStyle = 'red';
         ctx.font = '20px Arial';
         ctx.fillText(`生命: ${player.health}`, 10, 25);
-
+        // 可以加上分數等其他UI
 
         // --- 繪製遊戲結束/勝利畫面 ---
         if (gameOver) {
@@ -732,19 +721,23 @@
             ctx.fillText('恭喜勝利!', canvasWidth / 2, canvasHeight / 2);
             ctx.textAlign = 'left'; // 恢復預設
         }
-    } // End of draw()
-
+    } // End draw()
 
     // --- 遊戲主循環 ---
     function gameLoop() {
         update();
         draw();
-        requestAnimationFrame(gameLoop); // 請求下一幀
+        // 持續請求下一幀，除非遊戲結束
+        if (!gameOver && !gameWon) {
+             requestAnimationFrame(gameLoop);
+        } else {
+             // 遊戲結束後可以停止背景音樂等
+             // bgMusic.pause();
+             console.log("遊戲循環停止");
+        }
     }
 
     // --- 初始化遊戲世界 ---
-    let worldWidth = 2000; // 設定遊戲世界的總寬度
-
     function initializeGame() {
         // 重置所有狀態
         player = {
@@ -761,58 +754,71 @@
         gameOver = false;
         gameWon = false;
         keys = { left: false, right: false, jump: false, shoot: false };
+        worldWidth = 2000; // 重設世界寬度
 
         // --- 設定關卡內容 ---
-        // 範例：放置一些障礙物和敵人
-        createObstacle(300, canvasHeight - groundHeight - 80, 50, 80); // 第一個障礙物
-        createObstacle(600, canvasHeight - groundHeight - 120, 80, 120); // 第二個較高的障礙物
+        createObstacle(300, canvasHeight - groundHeight - 80, 50, 80);
+        createObstacle(600, canvasHeight - groundHeight - 120, 80, 120);
         createObstacle(950, canvasHeight - groundHeight - 60, 100, 60);
+        createObstacle(1400, canvasHeight - groundHeight - 100, 70, 100); // 新增障礙物
 
-        createEnemyA(400, canvasHeight - groundHeight - 50); // 第一個A怪
-        createEnemyB(700, canvasHeight - groundHeight - 50); // 第一個B怪
-        createEnemyA(1100, canvasHeight - groundHeight - 50); // 第二個A怪
-        createEnemyB(1300, canvasHeight - groundHeight - 50); // 第二個B怪
+        createEnemyA(400, canvasHeight - groundHeight - 50);
+        createEnemyB(700, canvasHeight - groundHeight - 50);
+        createEnemyA(1100, canvasHeight - groundHeight - 50);
+        createEnemyB(1300, canvasHeight - groundHeight - 50);
+        createEnemyA(1600, canvasHeight - groundHeight - 50); // 新增敵人
 
-        // 將C怪放在較後面的位置
-        createEnemyC(worldWidth - 200, canvasHeight - groundHeight - 70); // C 怪 (最終Boss)
-
-         // 確保世界寬度至少能容納最後的敵人
-        if (worldWidth < 1500) worldWidth = 1500;
+        createEnemyC(worldWidth - 250, canvasHeight - groundHeight - 70); // C 怪
 
         console.log("遊戲初始化完成");
+        // 如果之前遊戲結束，需要重新啟動循環
+        if (gameOver || gameWon) {
+             console.log("重新啟動遊戲循環");
+             gameLoop();
+        }
     }
-
 
     // --- 監聽資源載入完成 ---
     let loadCheckInterval = setInterval(() => {
         if (allResourcesLoaded) {
             clearInterval(loadCheckInterval);
-            initializeGame(); // 初始化關卡
-            // 添加一個開始按鈕或直接開始遊戲循環
-             // 為了簡單起見，這裡直接開始，但建議加個開始畫面
-             console.log("資源載入完畢，開始遊戲循環");
-             gameLoop(); // 啟動遊戲循環
+            initializeGame();
+             // 添加一個提示，告知可以開始遊戲
+             ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+             ctx.fillStyle = 'black';
+             ctx.font = '25px Arial';
+             ctx.textAlign = 'center';
+             ctx.fillText('資源載入完成!', canvasWidth / 2, canvasHeight / 2 - 20);
+             ctx.fillText('點擊任意按鈕開始遊戲', canvasWidth / 2, canvasHeight / 2 + 20);
+             ctx.textAlign = 'left';
+             console.log("資源載入完畢，等待玩家互動以開始遊戲");
+             // 不直接啟動 gameLoop，等待第一次按鈕觸發 initializeAudio 時啟動
+             // 或者添加一個明確的開始按鈕
+             let gameStarted = false;
+             function startGameOnce() {
+                 if (!gameStarted) {
+                     console.log("遊戲開始!");
+                     gameStarted = true;
+                     gameLoop(); // 首次互動後啟動遊戲循環
+                     // 移除這個一次性監聽器
+                     gameContainer.removeEventListener('touchstart', startGameOnce);
+                     gameContainer.removeEventListener('mousedown', startGameOnce);
+                 }
+             }
+             // 監聽遊戲容器的首次觸摸或點擊來開始遊戲
+             gameContainer.addEventListener('touchstart', startGameOnce, { once: true });
+             gameContainer.addEventListener('mousedown', startGameOnce, { once: true });
+
         } else {
-             console.log("等待資源載入...");
-             // 可以在畫布上繪製載入進度
+             // 持續繪製載入畫面
              ctx.clearRect(0, 0, canvasWidth, canvasHeight);
              ctx.fillStyle = 'black';
              ctx.font = '20px Arial';
-             ctx.fillText(`Loading... ${imagesLoaded}/${totalImages}`, canvasWidth/2 - 70, canvasHeight/2);
+             ctx.textAlign = 'center';
+             ctx.fillText(`Loading... ${imagesLoaded}/${totalImages}`, canvasWidth/2, canvasHeight/2);
+             ctx.textAlign = 'left';
         }
-    }, 100); // 每100毫秒檢查一次
-
-    // --- 響應式調整畫布大小 ---
-    function resizeCanvas() {
-        // 可以根據 gameContainer 的大小來調整 canvas 邏輯大小
-        // 這裡為了簡單，保持固定邏輯大小，讓 CSS 處理縮放
-        // canvas.width = gameContainer.clientWidth;
-        // canvas.height = gameContainer.clientHeight;
-        // 需要重新計算或縮放遊戲內元素的位置和大小
-        // draw(); // 調整後重繪
-    }
-    // window.addEventListener('resize', resizeCanvas);
-    // resizeCanvas(); // 初始調整
+    }, 100);
 
 </script>
 
